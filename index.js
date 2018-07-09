@@ -3,31 +3,38 @@ var http = require('http'),
 
 var server = http.createServer();
 
-var indexHTML,
-    error404;
-
-fs.readFile('./index.html', 'utf-8', function(err, data){
-  if (err) throw err;
-  indexHTML = data;
-});
-
-fs.readFile('./images/404.jpg', function(err, data) {
-  if (err) throw err;
-  error404 = data;
-});
-
 server.on('request', function (request, response) {
 
-  if (request.method === 'GET' && request.url === '/') {
-    response.setHeader("Content-Type", "text/html; charset=utf-8");
-    response.write(indexHTML);
+  if (request.method === 'GET') {
+    switch (request.url) {
+      case '/':
+        fs.readFile('./index.html', 'utf-8', function(err, html) {
+          response.writeHead(200, {'Content-type': 'text/html; charset=utf-8'});
+          response.write(html);
+          response.end();
+        });
+        break;
+      case '/css/style.css':
+        fs.readFile('./css/style.css', 'utf-8', function(err, css) {
+          response.writeHead(200, {'Content-type': 'text/css; charset=utf-8'});
+          response.write(css);
+          response.end();
+        });
+        break;
+      default:
+        writeError();
+    }
   } else {
-    response.setHeader("Content-Type", "image/jpg");
-    response.statusCode = 404;
-    response.write(error404);
+    writeError();    
   }
 
-  response.end();
+  function writeError() {
+    fs.readFile('./images/404.jpg', 'binary', function(err, img) {
+      response.writeHead(404, {'Content-type': 'image/jpg'});
+      response.write(img, 'binary');
+      response.end();
+    });
+  };
 });
 
 server.listen(8080);
